@@ -1,42 +1,91 @@
 "use client";
 import { useState } from "react";
 
-export default function Chat() {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [input, setInput] = useState("");
+interface ChatProps {
+  userId: string;
+}
 
-  const sendMessage = async () => {
-    if (!input) return;
+export default function Chat({ userId }: ChatProps) {
+  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    // 내 메시지 추가
-    setMessages((prev) => [...prev, `👤: ${input}`]);
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-    const response = await fetch("https://findyourwave.uk/webhook/chatbot", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message: input }),
-    });
+    try {
+      setIsLoading(true);
+      const userMessage = { role: 'user', content: input };
+      setMessages(prev => [...prev, userMessage]);
+      setInput('');
 
-    const result = await response.json();
-    setMessages((prev) => [...prev, `🤖: ${result.reply}`]);
-    setInput("");
+      // n8n 웹훅 엔드포인트로 요청 보내기
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          userId: userId, // 사용자 ID 포함
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: "1rem" }}>
-        {messages.map((m, i) => (
-          <div key={i}>{m}</div>
+    <div className="flex flex-col h-[600px] border rounded-lg">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex ${
+              message.role === 'user' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <div
+              className={`max-w-[70%] rounded-lg p-3 ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
+              }`}
+            >
+              {message.content}
+            </div>
+          </div>
         ))}
       </div>
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="질문을 입력하세요"
-      />
-      <button onClick={sendMessage}>보내기</button>
+      <form onSubmit={sendMessage} className="border-t p-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 p-2 border rounded"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Sending...' : 'Send'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
