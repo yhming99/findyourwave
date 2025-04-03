@@ -1,5 +1,13 @@
+import { Metadata } from 'next';
 import BeachPageClient from './beach-page-client';
 
-export default async function BeachPage({ params }: { params: { beach: string } }) {
+interface PageProps {
+  params: {
+    beach: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function BeachPage({ params, searchParams }: PageProps) {
   return <BeachPageClient beach={params.beach} />;
 } 
