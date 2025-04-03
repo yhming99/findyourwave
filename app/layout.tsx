@@ -1,4 +1,3 @@
-
 import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -50,12 +49,17 @@ export default function RootLayout({
                     
                   </div>
 
-                  <div className="relative w-30  sm:block">
-                    <Input
-                      placeholder="Search for waves"
-                      className="pl-10 pr-4 py-2 w-full rounded-full border-border"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <div className="relative w-30 sm:block">
+                    <form action="/waves" className="relative">
+                      <Input
+                        name="search"
+                        placeholder="해수욕장 검색"
+                        className="pl-10 pr-4 py-2 w-full rounded-full border-border"
+                      />
+                      <button type="submit" className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </form>
                   </div>
                   
                   <div className="flex items-center gap-4">
