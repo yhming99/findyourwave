@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@supabase/supabase-js';
-import { useEffect, useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { createClient } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
 
 const supabase = createClient(
@@ -25,7 +25,7 @@ function matchesSearch(beachName: string, searchTerm: string): boolean {
   return cleanName.toLowerCase().includes(searchTerm.toLowerCase());
 }
 
-export default function WavesPage() {
+function WavesContent() {
   const [beachGroups, setBeachGroups] = useState<BeachGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
@@ -66,7 +66,7 @@ export default function WavesPage() {
     }
 
     fetchBeaches();
-  }, [searchTerm]); // searchTerm이 변경될 때마다 다시 필터링
+  }, [searchTerm]);
 
   if (loading) return <div className="p-4">Loading...</div>;
 
@@ -103,5 +103,13 @@ export default function WavesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function WavesPage() {
+  return (
+    <Suspense fallback={<div className="p-4">Loading...</div>}>
+      <WavesContent />
+    </Suspense>
   );
 } 
