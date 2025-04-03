@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 interface BeachGroup {
-  lzone: number;
+  lzone: string;
   beaches: string[];
 }
 
@@ -25,12 +25,14 @@ export default function WavesPage() {
       const { data, error } = await supabase
         .from('waves')
         .select('lzone, beach_name')
-        .eq('date', '2025040200'); // 첫 번째 타임스탬프만 가져옴
+        .order('lzone');
 
       if (error) {
         console.error('Error fetching beaches:', error);
         return;
       }
+
+      console.log('Fetched data:', data);
 
       // 대해구별로 해수욕장 그룹화
       const groups = data.reduce((acc: BeachGroup[], curr) => {
