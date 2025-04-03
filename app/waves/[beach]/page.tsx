@@ -1,11 +1,12 @@
 import { Metadata } from 'next';
 import BeachPageClient from './beach-page-client';
 
-export default async function BeachPage({
-  params,
-}: {
-  params: { beach: string };
-}) {
-  const beach = await Promise.resolve(params.beach);
+type PageProps = {
+  params: Promise<{ beach: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+export default async function BeachPage(props: PageProps) {
+  const { beach } = await props.params;
   return <BeachPageClient beach={beach} />;
 } 
