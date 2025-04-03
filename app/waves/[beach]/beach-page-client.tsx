@@ -1,43 +1,53 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import { ArrowUp, Info, Calendar, Cloud, Sun, CloudSun } from "lucide-react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
-import { createClient } from '@supabase/supabase-js'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import { ArrowUp, Info, Calendar, Cloud, Sun, CloudSun } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { createClient } from '@supabase/supabase-js';
 
-// Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-// 파도 등급 계산 함수
-function calculateRating(wh_sig: number): { rating: string; color: string } {
-  if (wh_sig < 0.5) return { rating: "POOR", color: "text-orange-500" }
-  if (wh_sig < 1.0) return { rating: "POOR TO FAIR", color: "text-yellow-500" }
-  if (wh_sig < 1.5) return { rating: "FAIR", color: "text-green-500" }
-  if (wh_sig < 2.0) return { rating: "FAIR TO GOOD", color: "text-emerald-500" }
-  return { rating: "GOOD", color: "text-blue-500" }
-}
+);
 
 // 풍향을 각도로 변환하는 함수
 function getWindDirection(wd: number): string {
-  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-  const index = Math.round(((wd + 360) % 360) / 22.5)
-  return directions[index % 16]
+  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  const index = Math.round(((wd + 360) % 360) / 22.5);
+  return directions[index % 16];
 }
 
-// 방향에 따른 회전 각도 계산 함수
+// 방향에 따른 회전 각도 계산 함수 (바람/스웰이 향하는 방향으로 수정)
 function getDirectionRotation(direction: string): number {
   const directionAngles: Record<string, number> = {
-    'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5,
-    'E': 90, 'ESE': 112.5, 'SE': 135, 'SSE': 157.5,
-    'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5,
-    'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5
-  }
-  return directionAngles[direction] || 0
+    'N': 180,  // 북쪽에서 오는 바람은 남쪽으로
+    'NNE': 202.5,
+    'NE': 225,  // 북동쪽에서 오는 바람은 남서쪽으로
+    'ENE': 247.5,
+    'E': 270,   // 동쪽에서 오는 바람은 서쪽으로
+    'ESE': 292.5,
+    'SE': 315,  // 남동쪽에서 오는 바람은 북서쪽으로
+    'SSE': 337.5,
+    'S': 0,     // 남쪽에서 오는 바람은 북쪽으로
+    'SSW': 22.5,
+    'SW': 45,   // 남서쪽에서 오는 바람은 북동쪽으로
+    'WSW': 67.5,
+    'W': 90,    // 서쪽에서 오는 바람은 동쪽으로
+    'WNW': 112.5,
+    'NW': 135,  // 북서쪽에서 오는 바람은 남동쪽으로
+    'NNW': 157.5
+  };
+  return directionAngles[direction] || 0;
+}
+
+// 파도 등급 계산 함수
+function calculateRating(wh_sig: number): { rating: string; color: string } {
+  if (wh_sig < 0.5) return { rating: "POOR", color: "text-orange-500" };
+  if (wh_sig < 1.0) return { rating: "POOR TO FAIR", color: "text-yellow-500" };
+  if (wh_sig < 1.5) return { rating: "FAIR", color: "text-green-500" };
+  if (wh_sig < 2.0) return { rating: "FAIR TO GOOD", color: "text-emerald-500" };
+  return { rating: "GOOD", color: "text-blue-500" };
 }
 
 // 빈 데이터 생성 함수
@@ -63,35 +73,34 @@ function createEmptyForecast(hour: string) {
     },
     pressure: "-",
     probability: "-"
-  }
+  };
 }
 
 // 날짜 포맷팅 함수
 function formatDate(dateStr: string) {
-  const year = dateStr.substring(0, 4)
-  const month = dateStr.substring(4, 6)
-  const day = dateStr.substring(6, 8)
-  return `${month}월${day}일`
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  return `${month}월${day}일`;
 }
 
 interface TideData {
-  current: { height: string }
+  current: { height: string };
   points: Array<{
-    time: string
-    height: string
-  }>
+    time: string;
+    height: string;
+  }>;
   sunInfo: {
-    firstLight: string
-    sunrise: string
-    sunset: string
-    lastLight: string
-  }
+    firstLight: string;
+    sunrise: string;
+    sunset: string;
+    lastLight: string;
+  };
 }
 
 // 샘플 타이드 데이터 생성 함수
 function generateTideData(date: string): TideData {
-  // 날짜에 따라 약간의 변화를 주기 위한 오프셋
-  const dateOffset = parseInt(date.substring(6, 8)) % 3
+  const dateOffset = parseInt(date.substring(6, 8)) % 3;
   
   return {
     current: { height: `${1.2 + dateOffset * 0.1}m` },
@@ -107,61 +116,70 @@ function generateTideData(date: string): TideData {
       sunset: "5:52pm",
       lastLight: "6:15pm",
     }
-  }
+  };
 }
 
-export default function Page() {
-  const [groupedData, setGroupedData] = useState<Record<string, any[]>>({})
-  const [tideData, setTideData] = useState<Record<string, TideData>>({})
-  const [openDays, setOpenDays] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const searchParams = useSearchParams()
-  const beach = searchParams.get('waves') || '정암'
-  const beachNames: Record<string, string> = {
-    '정암': '양양 정암해변',
-    '죽도': '양양 죽도해변',
-    '금진': '강릉 금진해변'
-  }
-
-  const hours = Array.from({ length: 8 }, (_, i) => `${(i * 3).toString().padStart(2, '0')}:00`)
+export default function BeachPageClient({ beach }: { beach: string }) {
+  const [groupedData, setGroupedData] = useState<Record<string, any[]>>({});
+  const [tideData, setTideData] = useState<Record<string, TideData>>({});
+  const [openDays, setOpenDays] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const decodedBeach = decodeURIComponent(beach);
+  const hours = Array.from({ length: 8 }, (_, i) => `${(i * 3).toString().padStart(2, '0')}:00`);
 
   useEffect(() => {
     async function fetchData() {
+      // 먼저 해당 해수욕장의 대해구를 찾습니다
+      const { data: lzoneData } = await supabase
+        .from('waves')
+        .select('lzone')
+        .like('beach_name', `%${decodedBeach}%`)
+        .limit(1);
+
+      if (!lzoneData?.length) return;
+
+      const lzone = lzoneData[0].lzone;
+
+      // 해당 대해구의 모든 예보 데이터를 가져옵니다
       const { data: waveData } = await supabase
-        .from(beach)
-        .select("tma_ef, wh_sig, wvprd_max, wvdr, ws, wd")
+        .from('waves')
+        .select('*')
+        .eq('lzone', lzone)
+        .order('date', { ascending: true });
+
+      if (!waveData) return;
 
       // 날짜별로 데이터 그룹화
-      const grouped: Record<string, any> = {}
-      const tides: Record<string, TideData> = {}
+      const grouped: Record<string, any> = {};
+      const tides: Record<string, TideData> = {};
       
-      waveData?.forEach(record => {
-        const dateStr = record.tma_ef.toString()
-        const date = dateStr.substring(0, 8)
-        const hour = dateStr.substring(8, 10)
+      waveData.forEach(record => {
+        const dateStr = record.date.toString();
+        const date = dateStr.substring(0, 8);
+        const hour = dateStr.substring(8, 10);
         
         if (!grouped[date]) {
-          grouped[date] = {}
+          grouped[date] = {};
           hours.forEach(h => {
-            grouped[date][h] = createEmptyForecast(h)
-          })
+            grouped[date][h] = createEmptyForecast(h);
+          });
           // 날짜별 타이드 데이터 생성
-          tides[date] = generateTideData(date)
+          tides[date] = generateTideData(date);
         }
 
         grouped[date][`${hour}:00`] = {
           time: `${hour}:00`,
-          surf: `${(record.wh_sig - 0.2).toFixed(1)}-${(record.wh_sig + 0.2).toFixed(1)}`,
-          ...calculateRating(record.wh_sig),
+          surf: `${(record.wave - 0.2).toFixed(1)}-${(record.wave + 0.2).toFixed(1)}`,
+          ...calculateRating(record.wave),
           primarySwell: {
-            height: `${record.wh_sig.toFixed(1)}m`,
-            period: `${Math.round(record.wvprd_max)}`,
-            direction: getWindDirection(record.wvdr)
+            height: `${record.wave.toFixed(1)}m`,
+            period: `${Math.round(record.period)}`,
+            direction: getWindDirection(record.wave_direction)
           },
           wind: {
-            speed: Math.round(record.ws).toString(),
-            gust: Math.round(record.ws * 1.3).toString(),
-            direction: getWindDirection(record.wd)
+            speed: Math.round(record.wind).toString(),
+            gust: Math.round(record.wind * 1.3).toString(),
+            direction: getWindDirection(record.wind_direction)
           },
           weather: {
             temp: "22",
@@ -169,54 +187,54 @@ export default function Page() {
           },
           pressure: "1018mb",
           probability: "95%"
-        }
-      })
+        };
+      });
 
-      setGroupedData(grouped)
-      setTideData(tides)
-      setLoading(false)
+      setGroupedData(grouped);
+      setTideData(tides);
+      setLoading(false);
     }
 
-    fetchData()
+    fetchData();
 
     const channel = supabase
-      .channel(`${beach}_changes`)
+      .channel(`${decodedBeach}_changes`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: beach
+        table: 'waves'
       }, () => {
-        fetchData()
+        fetchData();
       })
-      .subscribe()
+      .subscribe();
 
     return () => {
-      channel.unsubscribe()
-    }
-  }, [beach])
+      channel.unsubscribe();
+    };
+  }, [decodedBeach]);
 
   const toggleDay = (day: string) => {
     setOpenDays(prev => 
       prev.includes(day) 
         ? prev.filter(d => d !== day)
         : [...prev, day]
-    )
-  }
+    );
+  };
 
   if (loading) {
-    return <div className="p-4">Loading...</div>
+    return <div className="p-4">Loading...</div>;
   }
 
   const getKeyHoursForecast = (forecasts: any[]) => {
-    return forecasts.filter(f => ["06:00", "12:00", "18:00"].includes(f.time))
-  }
+    return forecasts.filter(f => ["06:00", "12:00", "18:00"].includes(f.time));
+  };
 
   const renderTideSection = (tideData: TideData) => (
     <div className="mt-4 border-t border-border">
       <div className="flex justify-between items-center p-2">
         <div>
           <h2 className="text-base font-medium">Tides (m)</h2>
-          <p className="text-xs text-muted-foreground">정암해수욕장</p>
+          <p className="text-xs text-muted-foreground">{decodedBeach}</p>
         </div>
         <Button variant="outline" size="sm" className="flex items-center gap-1 h-7 text-xs">
           <Calendar className="h-3 w-3" />
@@ -249,13 +267,13 @@ export default function Page() {
               { top: "top-3/4", left: "left-[40%]" },
               { top: "top-1/3", left: "left-[65%]" },
               { top: "top-2/3", left: "left-[85%]" },
-            ]
+            ];
             return (
               <div key={index} className={`absolute ${positions[index].top} ${positions[index].left} -ml-6 -mt-6`}>
                 <div className="text-[10px] text-muted-foreground">{point.time}</div>
                 <div className="text-[10px] font-medium">{point.height}</div>
               </div>
-            )
+            );
           })}
 
           {/* Time markers */}
@@ -306,15 +324,15 @@ export default function Page() {
         </div>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="bg-background p-4 max-w-5xl mx-auto">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold">{beachNames[beach]}</h1>
+        <h1 className="text-2xl font-bold">{decodedBeach}</h1>
       </div>
       {Object.entries(groupedData).map(([date, dayData]) => {
-        const forecasts = Object.values(dayData)
+        const forecasts = Object.values(dayData);
         return (
           <Collapsible
             key={date}
@@ -416,8 +434,8 @@ export default function Page() {
               </div>
             </div>
           </Collapsible>
-        )
+        );
       })}
     </div>
-  )
-}
+  );
+} 
