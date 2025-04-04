@@ -12,8 +12,11 @@ const supabase = createClient(
 );
 
 interface BeachGroup {
-  lzone: string;
-  beaches: string[];
+  region: string;
+  beaches: Array<{
+    name: string;
+    lzone: string;
+  }>;
 }
 
 // 해수욕장 이름에서 접미사를 제거하고 검색어와 매칭되는지 확인
@@ -33,35 +36,69 @@ function WavesContent() {
 
   useEffect(() => {
     async function fetchBeaches() {
-      const { data, error } = await supabase
+      // 먼저 waves 테이블에서 lzone이 있는 beach_name들을 가져옴
+      const { data: wavesData, error: wavesError } = await supabase
         .from('waves')
-        .select('lzone, beach_name')
-        .order('lzone');
+        .select('beach_name, lzone')
+        .not('lzone', 'is', null);
 
-      if (error) {
-        console.error('Error fetching beaches:', error);
+      if (wavesError) {
+        console.error('Error fetching waves:', wavesError);
         return;
       }
 
-      // 대해구별로 해수욕장 그룹화
-      const groups = data.reduce((acc: BeachGroup[], curr) => {
-        const existingGroup = acc.find(g => g.lzone === curr.lzone);
-        const beaches = curr.beach_name.split(',')
-          .map((b: string) => b.trim())
-          .filter((beach: string) => matchesSearch(beach, searchTerm)); // 검색어로 필터링
+      // 유효한 beach_name 목록 생성
+      const validBeaches = new Set(
+        wavesData.flatMap(wave => 
+          wave.beach_name.split(',').map((b: string) => b.trim())
+        )
+      );
+
+      // beaches 테이블에서 region 정보 가져오기
+      const { data: beachesData, error: beachesError } = await supabase
+        .from('beaches')
+        .select('beach_name, region')
+        .in('beach_name', Array.from(validBeaches));
+
+      if (beachesError) {
+        console.error('Error fetching beaches:', beachesError);
+        return;
+      }
+
+      // region별로 그룹화
+      const groupedBeaches = beachesData.reduce((acc: BeachGroup[], curr) => {
+        if (!matchesSearch(curr.beach_name, searchTerm)) return acc;
+
+        const wave = wavesData.find(w => 
+          w.beach_name.split(',').map((b: string) => b.trim()).includes(curr.beach_name)
+        );
         
-        if (beaches.length > 0) {  // 검색 결과가 있는 경우만 추가
-          if (existingGroup) {
-            existingGroup.beaches = Array.from(new Set([...existingGroup.beaches, ...beaches]));
-          } else {
-            acc.push({ lzone: curr.lzone, beaches });
-          }
+        if (!wave) return acc;
+
+        const existingGroup = acc.find(g => g.region === curr.region);
+        const beachInfo = {
+          name: curr.beach_name,
+          lzone: wave.lzone
+        };
+
+        if (existingGroup) {
+          existingGroup.beaches.push(beachInfo);
+        } else {
+          acc.push({
+            region: curr.region,
+            beaches: [beachInfo]
+          });
         }
-        
+
         return acc;
       }, []);
 
-      setBeachGroups(groups);
+      // region 이름으로 정렬
+      const sortedGroups = groupedBeaches.sort((a, b) => 
+        a.region.localeCompare(b.region)
+      );
+
+      setBeachGroups(sortedGroups);
       setLoading(false);
     }
 
@@ -78,27 +115,28 @@ function WavesContent() {
           검색 결과가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-8">
           {beachGroups.map((group) => (
-            <Card key={group.lzone}>
-              <CardHeader>
-                <CardTitle>대해구 {group.lzone}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {group.beaches.map((beach) => (
-                    <li key={beach}>
-                      <Link 
-                        href={`/waves/${encodeURIComponent(beach)}`}
-                        className="text-blue-500 hover:underline"
-                      >
-                        {beach}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div key={group.region} className="space-y-4">
+              <h2 className="text-xl font-semibold">{group.region}</h2>
+              <Card className="w-full">
+                <CardContent className="pt-6">
+                  <div className="flex flex-wrap gap-4">
+                    {group.beaches
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((beach) => (
+                        <Link 
+                          key={beach.name}
+                          href={`/waves/${encodeURIComponent(beach.name)}`}
+                          className="text-blue-500 hover:underline whitespace-nowrap"
+                        >
+                          {beach.name} ({beach.lzone})
+                        </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ))}
         </div>
       )}
