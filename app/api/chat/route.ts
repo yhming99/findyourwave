@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const { message, userId } = await request.json();
 
     // n8n 웹훅으로 요청 전송
-    const response = await fetch('https://findyourwave.uk/webhook/chatbot', {
+    const response = await fetch('https://n8n.findyourwave.uk/webhook/chatbot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
