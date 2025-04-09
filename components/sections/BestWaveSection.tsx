@@ -22,12 +22,12 @@ export function BestWaveSection() {
         </div>
 
         <div className="relative w-full h-36 rounded-lg overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/5" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <h3 className="text-2xl font-bold mb-2 text-white/80">Ready to catch your wave?</h3>
               <p className="text-white/80 mb-4">Join us and find your perfect spot</p>
-              <Button size="lg">Get Started</Button>
+              <Button size="lg" className="bg-white/20 hover:bg-white/30 text-white">Get Started</Button>
             </div>
           </div>
         </div>

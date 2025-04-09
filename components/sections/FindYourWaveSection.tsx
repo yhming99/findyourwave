@@ -12,8 +12,8 @@ import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,19 +24,26 @@ export function FindYourWaveSection() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello! I'm your wave finder. Tell me what kind of waves you're looking for!"
+      content: "안녕하세요! 원하시는 파도 조건을 말씀해주세요!"
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [visitorId, setVisitorId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  useEffect(() => {
+    // 브라우저 localStorage에서 visitorId를 가져오거나 새로 생성
+    const storedVisitorId = localStorage.getItem('visitorId');
+    if (storedVisitorId) {
+      setVisitorId(storedVisitorId);
+    } else {
+      const newVisitorId = uuidv4();
+      localStorage.setItem('visitorId', newVisitorId);
+      setVisitorId(newVisitorId);
+    }
+  }, []);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -51,28 +58,9 @@ export function FindYourWaveSection() {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      }
-    };
-
-    getUser();
-  }, [supabase]);
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
-    // 로그인 체크
-    if (!userId) {
-      router.push('/sign-in');
-      return;
-    }
 
     try {
       setIsLoading(true);
@@ -80,14 +68,14 @@ export function FindYourWaveSection() {
       setMessages(prev => [...prev, userMessage]);
       setInput('');
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch('https://n8n.findyourwave.uk/webhook/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: input,
-          userId: userId,
+          sessionId: visitorId,
         }),
       });
 
@@ -96,7 +84,8 @@ export function FindYourWaveSection() {
       }
 
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      console.log('API Response:', data);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, { 
@@ -131,22 +120,20 @@ export function FindYourWaveSection() {
               >
                 {message.role === 'assistant' && (
                   <Avatar>
-                    <AvatarImage src="/bot-avatar.png" />
                     <AvatarFallback>AI</AvatarFallback>
                   </Avatar>
                 )}
                 <div
                   className={`${
                     message.role === 'user'
-                      ? 'bg-white/20 backdrop-blur-sm text-white rounded-lg rounded-tr-none'
-                      : 'bg-white/20 text-white rounded-lg rounded-tl-none'
+                      ? 'bg-white/10 backdrop-blur-sm text-white rounded-lg rounded-tr-none'
+                      : 'bg-white/10 text-white rounded-lg rounded-tl-none'
                   } p-3`}
                 >
                   {message.content}
                 </div>
                 {message.role === 'user' && (
                   <Avatar>
-                    <AvatarImage src="/user-avatar.png" />
                     <AvatarFallback>Me</AvatarFallback>
                   </Avatar>
                 )}
@@ -174,16 +161,16 @@ export function FindYourWaveSection() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={userId ? "원하는 파도 조건을 입력하세요..." : "로그인 후 이용 가능합니다"}
-              className="flex-1 bg-white/20 border-white/20 text-white placeholder:text-white/50 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              disabled={isLoading || !userId}
+              placeholder="원하는 파도 조건을 입력하세요..."
+              className="flex-1 bg-white/10 border-white/10 text-white placeholder:text-white/50 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              disabled={isLoading}
             />
             <Button 
               type="submit"
-              className="bg-white/20 hover:bg-white/30 text-white focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              disabled={isLoading || !userId}
+              className="bg-white/10 hover:bg-white/20 text-white focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              disabled={isLoading}
             >
-              {isLoading ? '전송 중...' : userId ? '전송' : '로그인'}
+              {isLoading ? '전송 중...' : '전송'}
             </Button>
           </form>
         </div>
