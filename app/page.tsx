@@ -6,7 +6,7 @@ import { BestWaveSection } from "@/components/sections/BestWaveSection"
 
 export default function Home() {
   return (
-    <main className="snap-y snap-mandatory h-[calc(100vh-4rem)] w-full overflow-y-auto">
+    <main className="snap-y snap-mandatory h-[calc(100vh-4rem)] w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
       <div className="snap-start min-h-[calc(100vh-4rem)] w-full flex items-center justify-center relative">
         <div className="absolute inset-0 z-0">
           <img

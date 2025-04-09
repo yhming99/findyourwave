@@ -121,7 +121,7 @@ export function FindYourWaveSection() {
         </div>
 
         <div className="rounded-lg border bg-white/10 backdrop-blur-sm p-4 space-y-4">
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -138,7 +138,7 @@ export function FindYourWaveSection() {
                 <div
                   className={`${
                     message.role === 'user'
-                      ? 'bg-primary/20 backdrop-blur-sm text-white rounded-lg rounded-tr-none'
+                      ? 'bg-white/20 backdrop-blur-sm text-white rounded-lg rounded-tr-none'
                       : 'bg-white/20 text-white rounded-lg rounded-tl-none'
                   } p-3`}
                 >
@@ -152,6 +152,21 @@ export function FindYourWaveSection() {
                 )}
               </div>
             ))}
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <Avatar>
+                  <AvatarImage src="/bot-avatar.png" />
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+                <div className="bg-white/20 text-white rounded-lg rounded-tl-none p-3">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -160,12 +175,12 @@ export function FindYourWaveSection() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={userId ? "원하는 파도 조건을 입력하세요..." : "로그인 후 이용 가능합니다"}
-              className="flex-1 bg-white/20 border-white/20 text-white placeholder:text-white/50"
+              className="flex-1 bg-white/20 border-white/20 text-white placeholder:text-white/50 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               disabled={isLoading || !userId}
             />
             <Button 
               type="submit"
-              className="bg-primary/80 hover:bg-primary text-white"
+              className="bg-white/20 hover:bg-white/30 text-white focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               disabled={isLoading || !userId}
             >
               {isLoading ? '전송 중...' : userId ? '전송' : '로그인'}
