@@ -57,7 +57,7 @@ function WavesContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const searchTerm = searchParams.get('search') || '';
+  const searchTerm = searchParams?.get('search') ?? '';
 
   useEffect(() => {
     async function fetchBeaches() {
