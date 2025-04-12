@@ -251,6 +251,55 @@ const BeachList = ({ beaches }: { beaches: Beach[] }) => {
   )
 }
 
+// 행정구역 이름 매핑
+const KOREAN_NAMES: { [key: string]: string } = {
+  'Gangneung': '강릉시',
+  'Goseong': '고성군',
+  'Donghae': '동해시',
+  'Samcheok': '삼척시',
+  'Sokcho': '속초시',
+  'Yangyang': '양양군',
+  'Pohang': '포항시',
+  'Uljin': '울진군',
+  'Yeongdeok': '영덕군',
+  'Geoje': '거제시',
+  'Tongyeong': '통영시',
+  'Namhae': '남해군',
+  'Sacheon': '사천시',
+  'Buan': '부안군',
+  'Gunsan': '군산시',
+  'Yeosu': '여수시',
+  'Wando': '완도군',
+  'Goheung': '고흥군',
+  'Sinan': '신안군',
+  'Jindo': '진도군',
+  'Muan': '무안군',
+  'Mokpo': '목포시',
+  'Hampyeong': '함평군',
+  'Yeonggwang': '영광군',
+  'Boseong': '보성군',
+  'Jangheung': '장흥군',
+  'Boryeong': '보령시',
+  'Seocheon': '서천군',
+  'Taean': '태안군',
+  'Dangjin': '당진시',
+  'Seosan': '서산시',
+  'Hwaseong': '화성시',
+  'Jung': '중구',
+  'Ongjin': '옹진군',
+  'Ganghwa': '강화군',
+  'Gijang': '기장군',
+  'Haeundae': '해운대구',
+  'Suyeong': '수영구',
+  'Saha': '사하구',
+  'Seo': '서구',
+  'Dong': '동구',
+  'Buk': '북구',
+  'Ulju': '울주군',
+  'Jeju': '제주시',
+  'Seogwipo': '서귀포시'
+};
+
 export function BestWaveSection() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [selectedSubRegion, setSelectedSubRegion] = useState<string | null>(null)
@@ -374,17 +423,8 @@ export function BestWaveSection() {
   }, [])
 
   return (
-    <section className="min-h-screen bg-transparent">
-      <div className="container mx-auto max-w-7xl px-4 py-6">
-        <div className="text-center space-y-2 mb-6">
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl text-white">
-            대한민국 서핑스팟
-          </h1>
-          <p className="text-white/80 text-sm">
-            지역별 서핑 스팟을 확인해보세요
-          </p>
-        </div>
-
+    <section className="h-full flex flex-col justify-center">
+      <div className="container mx-auto max-w-7xl px-4">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
           <div className="lg:col-span-2">
             <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-4 h-full">
@@ -403,33 +443,60 @@ export function BestWaveSection() {
                   {geoData && (
                     <Geographies geography={geoData}>
                       {({ geographies }) =>
-                        geographies.map((geo) => (
-                          <Geography
-                            key={geo.rsmKey}
-                            geography={geo}
-                            onClick={() => setSelectedRegion(geo.properties.NAME_1)}
-                            style={{
-                              default: {
-                                fill: selectedRegion === geo.properties.NAME_1 
-                                  ? "rgba(255,255,255,0.4)" 
-                                  : "rgba(255,255,255,0.2)",
-                                stroke: "rgba(255,255,255,0.6)",
-                                strokeWidth: 0.5,
-                                outline: "none",
-                                transition: "all 0.3s"
-                              },
-                              hover: {
-                                fill: "rgba(255,255,255,0.3)",
-                                stroke: "rgba(255,255,255,0.6)",
-                                strokeWidth: 0.5,
-                                outline: "none",
-                              },
-                              pressed: {
-                                fill: "rgba(255,255,255,0.4)",
-                              }
-                            }}
-                          />
-                        ))
+                        geographies.map((geo) => {
+                          const regionName = geo.properties.NAME_1;
+                          const hasBeaches = groupedBeaches[regionName] && 
+                            Object.values(groupedBeaches[regionName]).flat().length > 0;
+                          
+                          // 지역별 색상 매핑
+                          const getRegionColor = (region: string) => {
+                            const colors: { [key: string]: string } = {
+                              'Gangwon-do': 'rgba(255, 99, 132, 0.3)',
+                              'Gyeongsangbuk-do': 'rgba(54, 162, 235, 0.3)',
+                              'Gyeongsangnam-do': 'rgba(255, 206, 86, 0.3)',
+                              'Jeollabuk-do': 'rgba(75, 192, 192, 0.3)',
+                              'Jeollanam-do': 'rgba(153, 102, 255, 0.3)',
+                              'Chungcheongnam-do': 'rgba(255, 159, 64, 0.3)',
+                              'Gyeonggi-do': 'rgba(255, 192, 203, 0.4)',
+                              'Incheon': 'rgba(83, 102, 255, 0.3)',
+                              'Busan': 'rgba(255, 99, 255, 0.3)',
+                              'Ulsan': 'rgba(144, 238, 144, 0.4)',
+                              'Jeju': 'rgba(255, 127, 80, 0.3)'
+                            };
+                            return colors[region] || 'rgba(255,255,255,0.1)';
+                          };
+                          
+                          return (
+                            <Geography
+                              key={geo.rsmKey}
+                              geography={geo}
+                              onClick={() => setSelectedRegion(regionName)}
+                              tabIndex={-1}
+                              className="focus:outline-none"
+                              style={{
+                                default: {
+                                  fill: selectedRegion === regionName 
+                                    ? "rgba(255,255,255,0.4)"
+                                    : hasBeaches 
+                                      ? getRegionColor(regionName)
+                                      : "rgba(255,255,255,0.1)",
+                                  stroke: "rgba(255,255,255,0.4)",
+                                  strokeWidth: 0.5,
+                                  transition: "all 0.3s",
+                                  cursor: hasBeaches ? "pointer" : "default"
+                                },
+                                hover: {
+                                  fill: "rgba(255,255,255,0.4)",
+                                  stroke: "rgba(255,255,255,0.6)",
+                                  strokeWidth: 0.5
+                                },
+                                pressed: {
+                                  fill: "rgba(255,255,255,0.45)"
+                                }
+                              }}
+                            />
+                          );
+                        })
                       }
                     </Geographies>
                   )}
@@ -439,8 +506,8 @@ export function BestWaveSection() {
                       coordinates={[parseFloat(beach.lon), parseFloat(beach.lat)]}
                     >
                       <circle 
-                        r={2} 
-                        fill={selectedRegion ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)"} 
+                        r={1.5} 
+                        fill="rgba(255,255,255,0.9)"
                       />
                     </Marker>
                   ))}
@@ -451,8 +518,8 @@ export function BestWaveSection() {
 
           <div className="lg:col-span-3">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 h-full flex flex-col">
-              <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-white">
+              <div className="h-12 flex justify-between items-center">
+                <h2 className="text-lg font-medium text-white">
                   {selectedRegion 
                     ? `${REGIONS[selectedRegion]?.koreanName || selectedRegion} 서핑스팟`
                     : '지역을 선택하세요'
@@ -474,79 +541,27 @@ export function BestWaveSection() {
               <div className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto">
                   {selectedRegion ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[12rem] overflow-y-auto">
+                    <div className="space-y-2">
+                      <div className="h-16 grid grid-cols-4 sm:grid-cols-8 gap-0.5 overflow-y-auto">
                         {Object.entries(currentGroupedBeaches).map(([subRegion, beaches]) => {
-                          // 행정구역 이름 매핑
-                          const getKoreanName = (name: string) => {
-                            const mappings: { [key: string]: string } = {
-                              'Gangneung': '강릉시',
-                              'Goseong': '고성군',
-                              'Donghae': '동해시',
-                              'Samcheok': '삼척시',
-                              'Sokcho': '속초시',
-                              'Yangyang': '양양군',
-                              'Pohang': '포항시',
-                              'Uljin': '울진군',
-                              'Yeongdeok': '영덕군',
-                              'Geoje': '거제시',
-                              'Tongyeong': '통영시',
-                              'Namhae': '남해군',
-                              'Sacheon': '사천시',
-                              'Buan': '부안군',
-                              'Gunsan': '군산시',
-                              'Yeosu': '여수시',
-                              'Wando': '완도군',
-                              'Goheung': '고흥군',
-                              'Sinan': '신안군',
-                              'Jindo': '진도군',
-                              'Muan': '무안군',
-                              'Mokpo': '목포시',
-                              'Hampyeong': '함평군',
-                              'Yeonggwang': '영광군',
-                              'Boseong': '보성군',
-                              'Jangheung': '장흥군',
-                              'Boryeong': '보령시',
-                              'Seocheon': '서천군',
-                              'Taean': '태안군',
-                              'Dangjin': '당진시',
-                              'Seosan': '서산시',
-                              'Hwaseong': '화성시',
-                              'Jung': '중구',
-                              'Ongjin': '옹진군',
-                              'Ganghwa': '강화군',
-                              'Gijang': '기장군',
-                              'Haeundae': '해운대구',
-                              'Suyeong': '수영구',
-                              'Saha': '사하구',
-                              'Seo': '서구',
-                              'Dong': '동구',
-                              'Buk': '북구',
-                              'Ulju': '울주군',
-                              'Jeju': '제주시',
-                              'Seogwipo': '서귀포시'
-                            };
-                            return mappings[name] || name;
-                          };
-                          
-                          const koreanName = getKoreanName(subRegion);
+                          const koreanName = KOREAN_NAMES[subRegion] || subRegion;
                           return (
                             <button
                               key={subRegion}
                               onClick={() => setSelectedSubRegion(subRegion)}
-                              className={`p-2 rounded-lg text-left transition-all ${
+                              className={`h-[3.5rem] px-1 py-1 rounded-lg text-left transition-all ${
                                 selectedSubRegion === subRegion
                                   ? 'bg-white/20 text-white'
                                   : 'bg-white/10 text-white/80 hover:bg-white/15'
                               }`}
                             >
-                              <div className="font-medium text-sm">{koreanName}</div>
-                              <div className="text-xs opacity-80">{beaches.length}개의 해변</div>
+                              <div className="font-medium text-[11px] whitespace-nowrap">{koreanName}</div>
+                              <div className="text-[9px] opacity-80 whitespace-nowrap">{beaches.length}개의 해변</div>
                             </button>
                           );
                         })}
                       </div>
-                      <div className="h-[calc(100vh-30rem)] overflow-y-auto">
+                      <div className="h-[calc(100vh-24rem)] overflow-y-auto">
                         {selectedSubRegion ? (
                           displayedBeaches.length > 0 ? (
                             <BeachList beaches={displayedBeaches} />
@@ -563,8 +578,10 @@ export function BestWaveSection() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-white/60 text-center py-4">
-                      지도에서 지역을 선택하세요
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-white/60 text-center">
+                        지도에서 지역을 선택하세요
+                      </div>
                     </div>
                   )}
                 </div>
