@@ -306,6 +306,18 @@ export function BestWaveSection() {
   const [beaches, setBeaches] = useState<Beach[]>([])
   const [groupedBeaches, setGroupedBeaches] = useState<GroupedBeaches>({})
   const [geoData, setGeoData] = useState<any>(null)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+
+  // 즐겨찾기 목록 불러오기
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('beachFavorites')
+    if (savedFavorites) {
+      setFavorites(new Set(JSON.parse(savedFavorites)))
+    }
+  }, [])
+
+  // 즐겨찾기된 해변 필터링
+  const favoriteBeaches = beaches.filter(beach => favorites.has(beach.beach_name))
 
   // 해변 데이터 그룹화
   const groupBeachesByRegion = async (beaches: Beach[], geoData: any) => {
@@ -578,10 +590,18 @@ export function BestWaveSection() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-full flex items-center justify-center">
-                      <div className="text-white/60 text-center">
+                    <div className="h-full flex flex-col">
+                      <div className="text-white/60 text-center mb-4">
                         지도에서 지역을 선택하세요
                       </div>
+                      {favoriteBeaches.length > 0 && (
+                        <div className="flex-1 overflow-y-auto">
+                          <div className="mb-2 text-white/80 text-sm font-medium">
+                            즐겨찾기한 해변 ({favoriteBeaches.length})
+                          </div>
+                          <BeachList beaches={favoriteBeaches} />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
