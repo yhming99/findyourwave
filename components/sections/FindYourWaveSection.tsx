@@ -68,7 +68,7 @@ export function FindYourWaveSection() {
       setMessages(prev => [...prev, userMessage]);
       setInput('');
 
-      const response = await fetch('https://n8n.findyourwave.uk/webhook/chatbot', {
+      const response = await fetch('http://35.225.69.134:8000/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,12 +80,19 @@ export function FindYourWaveSection() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error('메시지 전송에 실패했습니다');
       }
 
       const data = await response.json();
       console.log('API Response:', data);
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      
+      // 응답 형식에 맞게 처리
+      const responseContent = data.message || data.reply || data.response;
+      if (!responseContent) {
+        throw new Error('응답 데이터 형식이 유효하지 않습니다');
+      }
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: responseContent }]);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, { 
