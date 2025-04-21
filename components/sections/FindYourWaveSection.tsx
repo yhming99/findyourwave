@@ -68,7 +68,7 @@ export function FindYourWaveSection() {
       setMessages(prev => [...prev, userMessage]);
       setInput('');
 
-      const response = await fetch('http://35.225.69.134:8000/chatbot', {
+      const response = await fetch('https://api.findyourwave.uk/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
