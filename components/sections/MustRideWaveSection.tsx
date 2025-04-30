@@ -86,6 +86,15 @@ const formatDate = (dateStr: string) => {
   return `${month}월${day}일 ${hour}시`;
 };
 
+// 날짜 문자열을 Date 객체로 변환하는 함수
+const parseDateString = (dateStr: string): Date => {
+  const year = parseInt(dateStr.substring(0, 4));
+  const month = parseInt(dateStr.substring(4, 6)) - 1; // 0-11 기준
+  const day = parseInt(dateStr.substring(6, 8));
+  const hour = parseInt(dateStr.substring(8, 10));
+  return new Date(year, month, day, hour);
+};
+
 export function MustRideWaveSection() {
   const [topBeaches, setTopBeaches] = useState<Beach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,23 +110,40 @@ export function MustRideWaveSection() {
   useEffect(() => {
     const fetchTopBeaches = async () => {
       try {
+        // 현재 시간
+        const now = new Date();
+        
         // 현재 날짜 기준으로 3일치 데이터 범위 계산
-        const today = new Date();
         const dates = Array.from({length: 3}, (_, i) => {
-          const date = new Date(today);
-          date.setDate(today.getDate() + i);
+          const date = new Date(now);
+          date.setDate(now.getDate() + i);
           return date.getFullYear() +
                  String(date.getMonth() + 1).padStart(2, '0') +
                  String(date.getDate()).padStart(2, '0');
         });
 
+        // 현재 시간의 시간대
+        const currentHour = now.getHours();
+        
         // 주간 시간대 (06시 ~ 18시)
         const dayHours = ['06', '09', '12', '15', '18'];
         
+        // 현재 시간 이후의 시간대만 필터링
+        const filteredHours = dayHours.filter(hour => {
+          // 오늘이면 현재 시간 이후만, 내일부터는 모든 시간
+          if (dates[0] === now.getFullYear() + 
+              String(now.getMonth() + 1).padStart(2, '0') + 
+              String(now.getDate()).padStart(2, '0')) {
+            return parseInt(hour) > currentHour;
+          }
+          return true;
+        });
+        
         // 날짜와 시간 조합으로 필터 생성
-        const dateTimeFilters = dates.flatMap(date => 
-          dayHours.map(hour => `date.eq.${date}${hour}`)
-        ).join(',');
+        const dateTimeFilters = dates.flatMap((date, dateIndex) => {
+          const hours = dateIndex === 0 ? filteredHours : dayHours;
+          return hours.map(hour => `date.eq.${date}${hour}`);
+        }).join(',');
 
         const { data, error: fetchError } = await supabase
           .from('best_spot')
@@ -138,8 +164,21 @@ export function MustRideWaveSection() {
           return;
         }
 
+        // 현재 시간 이후의 데이터만 필터링
+        const currentTime = now.getTime();
+        const futureData = data.filter(item => {
+          const itemDate = parseDateString(item.date);
+          return itemDate.getTime() >= currentTime;
+        });
+
+        if (futureData.length === 0) {
+          console.log('No future data available');
+          setTopBeaches([]);
+          return;
+        }
+
         // 각 해변별로 최고 점수만 선택
-        const bestScoresByBeach = data.reduce((acc: { [key: string]: Beach }, curr) => {
+        const bestScoresByBeach = futureData.reduce((acc: { [key: string]: Beach }, curr) => {
           const key = curr.beach_name;
           if (!acc[key] || acc[key].surf_score < curr.surf_score) {
             acc[key] = curr;
