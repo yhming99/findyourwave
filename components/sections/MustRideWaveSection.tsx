@@ -100,7 +100,21 @@ export function MustRideWaveSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const beachesPerPage = 6;
+  const [beachesPerPage, setBeachesPerPage] = useState(6);
+
+  // 윈도우 크기에 따라 페이지당 카드 수 조정
+  useEffect(() => {
+    const handleResize = () => {
+      setBeachesPerPage(window.innerWidth < 768 ? 3 : 6);
+    };
+    
+    handleResize(); // 초기 설정
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -228,7 +242,7 @@ export function MustRideWaveSection() {
 
   return (
     <section className="h-full flex flex-col justify-center py-8">
-      <div className="container mx-auto max-w-6xl space-y-8">
+      <div className="container mx-auto max-w-6xl space-y-4">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl text-white">
             Must Ride Waves
@@ -238,7 +252,7 @@ export function MustRideWaveSection() {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3">
           {isLoading ? (
             <div className="col-span-full text-center text-white/80">로딩 중...</div>
           ) : error ? (
@@ -254,7 +268,7 @@ export function MustRideWaveSection() {
               <Link 
                 key={beach.beach_name}
                 href={`/waves/${encodeURIComponent(beach.beach_name)}`} 
-                className="group relative overflow-hidden rounded-lg bg-white/10 backdrop-blur-sm transition-transform hover:scale-105 h-40"
+                className="group relative overflow-hidden rounded-lg bg-white/10 backdrop-blur-sm transition-transform hover:scale-105 h-36 sm:h-36"
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 z-10" />
                 <div className="absolute inset-x-0 top-0 p-3 text-white z-20 bg-black/40">
@@ -277,7 +291,7 @@ export function MustRideWaveSection() {
 
         {/* 페이지네이션 */}
         {totalPages > 1 && (
-          <div className="flex justify-center space-x-2 mt-6">
+          <div className="flex justify-center space-x-2 mt-4">
             <button
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
